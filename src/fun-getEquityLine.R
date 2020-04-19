@@ -12,7 +12,9 @@ getEquityLine <- function(quotes, weightsList, proportionalCost, initialEquity, 
                                                              1)))
   
   # Calculate equity line in consecutive steps.
+  
   for (i in 1:(length(weightsList))) {
+    print(i)
     startDate <- names(weightsList)[i] %>% as.Date() + 1
     
     if (i < length(weightsList)) {
@@ -37,12 +39,14 @@ getEquityLine <- function(quotes, weightsList, proportionalCost, initialEquity, 
     if (i > 1) {
       # Calculate change of positions.
       positionChange <-
-        suppressMessages(full_join(((weightsList[[i]] * DFL * currentEquity) /
-                                      currentQuotes[1, -1]),
-                                   positions))
-
+        suppressMessages(
+          bind_rows(
+            ((weightsList[[i]] * DFL * currentEquity) / currentQuotes[1, -1]),
+            positions)
+        )
+      
       positionChange[is.na(positionChange)] <- 0
-      if(nrow(positionChange) == 2) {
+      if (nrow(positionChange) == 2) {
         positionChange <- abs(positionChange[1, ] - positionChange[2, ])
         
         startQuotes <- quotes %>%
