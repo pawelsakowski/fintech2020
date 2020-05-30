@@ -1,20 +1,30 @@
-getEquityLine <- function(quotes, weightsList, proportionalCost, initialEquity, DFL){
+getEquityLine <- function(quotes, 
+                          weightsList, 
+                          proportionalCost, 
+                          initialEquity, 
+                          DFL){
+  
   # Calculate initial observations of equity lines.
-  equityLine <- quotes %>%
+  equityLine <- 
+    quotes %>%
     filter(Date < names(weightsList)[1] %>% as.Date()) %>%
     select(Date) %>%
     arrange(Date) %>%
     distinct() %>%
     mutate(equityLine = initialEquity) %>%
-    bind_rows(data.frame(Date = names(weightsList)[1] %>% as.Date(),
-                         equityLine = initialEquity * ifelse(weightsList[[1]] %>% sum() > 0,
-                                                             (1 - DFL * proportionalCost),
-                                                             1)))
+    bind_rows(
+      data.frame(
+        Date = names(weightsList)[1] %>% as.Date(),
+        equityLine = initialEquity * ifelse(weightsList[[1]] %>% sum() > 0,
+                                            (1 - DFL * proportionalCost),
+                                            1)
+      )
+    )
   
   # Calculate equity line in consecutive steps.
-  
+
   for (i in 1:(length(weightsList))) {
-    print(i)
+    # print(i)
     startDate <- names(weightsList)[i] %>% as.Date() + 1
     
     if (i < length(weightsList)) {
@@ -39,14 +49,12 @@ getEquityLine <- function(quotes, weightsList, proportionalCost, initialEquity, 
     if (i > 1) {
       # Calculate change of positions.
       positionChange <-
-        suppressMessages(
-          bind_rows(
-            ((weightsList[[i]] * DFL * currentEquity) / currentQuotes[1, -1]),
-            positions)
-        )
-      
+        suppressMessages(full_join(((weightsList[[i]] * DFL * currentEquity) /
+                                      currentQuotes[1, -1]),
+                                   positions))
+
       positionChange[is.na(positionChange)] <- 0
-      if (nrow(positionChange) == 2) {
+      if(nrow(positionChange) == 2) {
         positionChange <- abs(positionChange[1, ] - positionChange[2, ])
         
         startQuotes <- quotes %>%
@@ -89,5 +97,17 @@ getEquityLine <- function(quotes, weightsList, proportionalCost, initialEquity, 
       mutate(equityLine = equityLine %>% zoo::na.locf())
   }
   
-  equityLine
+  if(any(equityLine$equityLine <= 0)){
+    bankruptcyDate <- equityLine %>%
+      filter(equityLine <= 0) %>%
+      select(Date) %>%
+      pull() %>%
+      min()
+    
+    equityLine %>%
+      mutate(equityLine = ifelse(Date >= bankruptcyDate, 0, equityLine))
+  } else {
+    equityLine  
+  }
+  
 }

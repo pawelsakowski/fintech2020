@@ -1,15 +1,15 @@
+### defining functions
+source("funs/fun-getCryptoPricesForGivenDate.R")
+source("funs/fun-updateCryptoPrices.R")
+source("funs/fun-getDataFromStooq.R")
+
+
 ### updating data on crypto
-
-source("src/fun-getCryptoPricesForGivenDate.R")
-source("src/fun-updateCryptoPrices.R")
-
-updateCryptoPrices(start.date = "2020-02-20",
-                   stop.date  = "2020-04-17",
-                   updateLongTibble = F)
-
+updateCryptoPrices(start.date = last_date,
+                   stop.date  = stop_date,
+                   updateLongTibble = T)
 
 ### updating data on equity indices
-source("src/fun-getDataFromStooq.R")
 getDataFromStooq("^spx")   # S&P500
 getDataFromStooq("^ndq")   # NASDAQ
 getDataFromStooq("^dax")   # DAX
